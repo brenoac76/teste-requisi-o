@@ -4,7 +4,7 @@ import RequisitionForm from './components/RequisitionForm';
 import LoginScreen from './components/LoginScreen';
 import UserManagement from './components/UserManagement';
 import NotificationToast from './components/NotificationToast';
-import { Requisition, User } from './types';
+import { Requisition, User, RequisitionType } from './types';
 import { getRequisitions, deleteFromGoogleSheets } from './services/googleSheets';
 import { Loader2 } from 'lucide-react';
 import { playNotificationSound } from './utils/sound';
@@ -187,17 +187,22 @@ function App() {
     }
   };
 
-  const calculateNextRequisitionNumber = () => {
-    if (requisitions.length === 0) return 'R-1000';
+  const calculateNextRequisitionNumber = (type: RequisitionType) => {
+    const prefix = type === 'Produção' ? 'R-' : 'F-';
+    const startNum = type === 'Produção' ? 1000 : 1;
+    
+    if (requisitions.length === 0) return `${prefix}${startNum}`;
+    
     let maxNum = 0;
     requisitions.forEach(req => {
-      if (req.requisitionNumber) {
-        const numStr = req.requisitionNumber.replace(/\D/g, ''); 
+      if (req.type === type && req.requisitionNumber && req.requisitionNumber.startsWith(prefix)) {
+        const numStr = req.requisitionNumber.replace(prefix, '').replace(/\D/g, ''); 
         const num = parseInt(numStr, 10);
         if (!isNaN(num) && num > maxNum) maxNum = num;
       }
     });
-    return maxNum > 0 ? `R-${maxNum + 1}` : 'R-1000';
+    
+    return maxNum > 0 ? `${prefix}${maxNum + 1}` : `${prefix}${startNum}`;
   };
 
   // --- Lógica de Filtro baseada no Role ---
@@ -250,8 +255,8 @@ function App() {
           ) : (
             <RequisitionList 
               requisitions={getFilteredRequisitions()} 
-              onCreateNew={() => {
-                setSelectedReq(null);
+              onCreateNew={(type) => {
+                setSelectedReq({ type } as any);
                 setView('create');
               }}
               onSelect={(req) => {
@@ -271,7 +276,7 @@ function App() {
       {(view === 'create' || view === 'edit') && (
         <RequisitionForm 
           initialData={selectedReq}
-          suggestedNumber={view === 'create' ? calculateNextRequisitionNumber() : undefined}
+          suggestedNumber={view === 'create' && selectedReq ? calculateNextRequisitionNumber(selectedReq.type) : undefined}
           onSave={handleSave}
           // Apenas gestor recebe a função handleDelete. Operacional recebe undefined.
           onDelete={currentUser.role === 'gestor' ? handleDelete : undefined} 

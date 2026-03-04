@@ -47,6 +47,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
 
   const [formData, setFormData] = useState<Requisition>({
     id: generateId(),
+    type: initialData?.type || 'Produção',
     requisitionNumber: initialData?.requisitionNumber || suggestedNumber || 'R-1000', 
     date: getCurrentIsoString(),
     clientName: '',
@@ -63,7 +64,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
   });
 
   useEffect(() => {
-    if (initialData) {
+    if (initialData && initialData.requisitionNumber) {
       // Normalização de status antigos para novos se necessário
       let normalizedStatus = initialData.status;
       if (normalizedStatus as any === 'Recebido') normalizedStatus = 'Recebida';
@@ -74,6 +75,14 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
         status: normalizedStatus || 'Recebida',
         canceledBy: initialData.canceledBy
       });
+    } else if (initialData && initialData.type) {
+      // Se for apenas o tipo (nova requisição com tipo pré-definido)
+      setFormData(prev => ({
+        ...prev,
+        type: initialData.type,
+        fitter: currentUser.role === 'montador' ? currentUser.name : prev.fitter,
+        responsible: currentUser.role === 'montador' ? currentUser.name : prev.responsible
+      }));
     } else {
       if (currentUser.role === 'montador') {
         setFormData(prev => ({
@@ -107,10 +116,15 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
   // --- LÓGICA DE SERVIÇOS ---
   
   const handleAddService = () => {
-    if (!newService.description) {
+    if (!newService.description && formData.type === 'Produção') {
       alert("Informe ao menos a descrição do serviço.");
       return;
     }
+    if (formData.type === 'Fábrica' && (!newService.specification || !newService.reason)) {
+      alert("Informe a medida e o motivo.");
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       services: [...prev.services, { 
@@ -118,11 +132,13 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
         quantity: newService.quantity || 1, 
         specification: newService.specification || '', 
         description: newService.description || '', 
-        volume: newService.volume || 0 
+        volume: newService.volume || 0,
+        color: newService.color || '',
+        reason: newService.reason
       }]
     }));
     // Reset inputs
-    setNewService({ quantity: 1, volume: undefined, specification: '', description: '' });
+    setNewService({ quantity: 1, volume: undefined, specification: '', description: '', color: '', reason: undefined });
   };
 
   const removeServiceRow = (id: string) => {
@@ -313,7 +329,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
             <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
           <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            {initialData ? 'Detalhes' : 'Nova Requisição'}
+            {initialData && initialData.requisitionNumber ? 'Detalhes' : `Nova Requisição ${formData.type}`}
             {isStatusLocked && <Lock className="w-4 h-4 text-gray-400" />}
           </h1>
         </div>
@@ -463,16 +479,6 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Montador</label>
-              <input 
-                type="text" 
-                value={formData.fitter} 
-                onChange={(e) => handleChange('fitter', e.target.value)}
-                disabled={isSensitiveFieldsLocked}
-                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
-              />
-            </div>
-            <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Ordem Compra</label>
               <input 
                 type="text" 
@@ -480,6 +486,16 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 onChange={(e) => handleChange('purchaseOrder', e.target.value)}
                 disabled={isStatusLocked}
                 className={`w-full p-2 border rounded outline-none ${isStatusLocked ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Montador</label>
+              <input 
+                type="text" 
+                value={formData.fitter} 
+                onChange={(e) => handleChange('fitter', e.target.value)}
+                disabled={isSensitiveFieldsLocked}
+                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
               />
             </div>
             <div>
@@ -499,11 +515,11 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
         {/* lg:col-span-8 significa 2/3 da tela no desktop */}
         <div className="col-span-1 lg:col-span-8 xl:col-span-9 space-y-6">
           
-          {/* Services */}
+          {/* Services / Factory Items */}
           <section className={`bg-white border rounded-lg overflow-hidden shadow-sm ${isCanceled ? 'opacity-75 grayscale' : ''}`}>
             <div className="bg-gray-100 p-3 border-b">
               <h2 className="font-bold text-gray-700 text-sm flex items-center gap-2">
-                SERVIÇOS <span className="text-xs bg-gray-200 text-gray-600 px-2 rounded-full">{formData.services.length}</span>
+                {formData.type === 'Produção' ? 'SERVIÇOS' : 'PEÇAS DE FÁBRICA'} <span className="text-xs bg-gray-200 text-gray-600 px-2 rounded-full">{formData.services.length}</span>
               </h2>
             </div>
             
@@ -514,12 +530,27 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                   <div className="flex-1 pr-2">
                     <div className="flex gap-2 text-xs font-bold text-gray-600 mb-1">
                       <span className="bg-white border px-1.5 rounded">{service.quantity} qtd</span>
-                      <span className="bg-white border px-1.5 rounded">{service.volume} vol</span>
+                      {formData.type === 'Produção' ? (
+                        <span className="bg-white border px-1.5 rounded">{service.volume} vol</span>
+                      ) : (
+                        <>
+                          {service.color && <span className="bg-white border px-1.5 rounded">Cor: {service.color}</span>}
+                          {service.reason && (
+                            <span className={`px-1.5 rounded border ${
+                              service.reason === 'Peça Batida' ? 'bg-red-50 text-red-600 border-red-100' :
+                              service.reason === 'Peça Faltante' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                              'bg-blue-50 text-blue-600 border-blue-100'
+                            }`}>
+                              {service.reason}
+                            </span>
+                          )}
+                        </>
+                      )}
                     </div>
                     {/* Especificação em Negrito */}
                     {service.specification && <p className="text-sm font-bold text-gray-800 leading-snug mb-0.5">{service.specification}</p>}
                     {/* Descrição em fonte menor e normal */}
-                    <p className="text-xs text-gray-500 leading-snug">{service.description}</p>
+                    {service.description && <p className="text-xs text-gray-500 leading-snug">{service.description}</p>}
                   </div>
                   {!isStatusLocked && (
                     <button type="button" onClick={() => removeServiceRow(service.id)} className="text-gray-300 hover:text-red-500 p-1">
@@ -529,7 +560,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 </div>
               ))}
               {formData.services.length === 0 && (
-                <p className="text-center text-xs text-gray-400 py-3 italic">Nenhum serviço adicionado.</p>
+                <p className="text-center text-xs text-gray-400 py-3 italic">Nenhum item adicionado.</p>
               )}
             </div>
 
@@ -546,41 +577,90 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                         className="w-full p-2 border rounded text-sm bg-white" 
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] text-gray-500 font-bold uppercase">Vol</label>
-                      <input 
-                        type="number" 
-                        value={newService.volume ?? ''} 
-                        onChange={(e) => setNewService({...newService, volume: e.target.value ? parseInt(e.target.value) : undefined})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-[10px] text-gray-500 font-bold uppercase">Espec. (Medidas)</label>
-                      <input 
-                        type="text" 
-                        value={newService.specification} 
-                        onChange={(e) => setNewService({...newService, specification: e.target.value})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
-                      />
-                    </div>
-                    <div className="col-span-4">
-                      <label className="text-[10px] text-gray-500 font-bold uppercase">Descrição</label>
-                      <input 
-                        type="text"
-                        value={newService.description} 
-                        onChange={(e) => setNewService({...newService, description: e.target.value})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
-                        placeholder="Descreva o serviço..."
-                      />
-                    </div>
+                    {formData.type === 'Produção' ? (
+                      <>
+                        <div>
+                          <label className="text-[10px] text-gray-500 font-bold uppercase">Vol</label>
+                          <input 
+                            type="number" 
+                            value={newService.volume ?? ''} 
+                            onChange={(e) => setNewService({...newService, volume: e.target.value ? parseInt(e.target.value) : undefined})} 
+                            className="w-full p-2 border rounded text-sm bg-white" 
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase">Espec. (Medidas)</label>
+                          <input 
+                            type="text" 
+                            value={newService.specification} 
+                            onChange={(e) => setNewService({...newService, specification: e.target.value})} 
+                            className="w-full p-2 border rounded text-sm bg-white" 
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase">Descrição</label>
+                          <input 
+                            type="text"
+                            value={newService.description} 
+                            onChange={(e) => setNewService({...newService, description: e.target.value})} 
+                            className="w-full p-2 border rounded text-sm bg-white" 
+                            placeholder="Descreva o serviço..."
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="text-[10px] text-gray-500 font-bold uppercase">Cor</label>
+                          <input 
+                            type="text" 
+                            value={newService.color || ''} 
+                            onChange={(e) => setNewService({...newService, color: e.target.value})} 
+                            className="w-full p-2 border rounded text-sm bg-white" 
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase">Medida</label>
+                          <input 
+                            type="text" 
+                            value={newService.specification} 
+                            onChange={(e) => setNewService({...newService, specification: e.target.value})} 
+                            className="w-full p-2 border rounded text-sm bg-white" 
+                            placeholder="Ex: 500x300"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase">Motivo</label>
+                          <select 
+                            value={newService.reason || ''} 
+                            onChange={(e) => setNewService({...newService, reason: e.target.value as any})} 
+                            className="w-full p-2 border rounded text-sm bg-white"
+                          >
+                            <option value="">Selecione...</option>
+                            <option value="Peça Batida">Peça Batida</option>
+                            <option value="Peça Faltante">Peça Faltante</option>
+                            <option value="Peça Danificada na Montagem">Peça Danificada na Montagem</option>
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase">Descrição (Opcional)</label>
+                          <input 
+                            type="text"
+                            value={newService.description} 
+                            onChange={(e) => setNewService({...newService, description: e.target.value})} 
+                            className="w-full p-2 border rounded text-sm bg-white" 
+                            placeholder="Obs..."
+                          />
+                        </div>
+                      </>
+                    )}
                 </div>
                 <button 
                     type="button" 
                     onClick={handleAddService} 
                     className="w-full bg-brand-dark text-white p-2 rounded text-sm font-bold flex items-center justify-center gap-2 hover:bg-black transition"
                 >
-                    <Plus className="w-4 h-4" /> INCLUIR SERVIÇO
+                    <Plus className="w-4 h-4" /> {formData.type === 'Produção' ? 'INCLUIR SERVIÇO' : 'INCLUIR PEÇA'}
                 </button>
               </div>
             )}

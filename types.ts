@@ -1,9 +1,13 @@
+export type RequisitionType = 'Produção' | 'Fábrica';
+
 export interface ServiceItem {
   id: string;
   quantity: number;
   specification: string;
   description: string;
   volume: number;
+  color?: string; // Added for Factory
+  reason?: 'Peça Batida' | 'Peça Faltante' | 'Peça Danificada na Montagem'; // Added for Factory
 }
 
 export interface DeliveryItem {
@@ -26,6 +30,7 @@ export type RequisitionStatus = 'Recebida' | 'Em Progresso' | 'Concluída' | 'Ca
 
 export interface Requisition {
   id: string;
+  type: RequisitionType; // Added type
   requisitionNumber: string; // e.g., "R-0013"
   date: string; // Data de recebimento
   dateInProgress?: string; // Data que iniciou progresso
