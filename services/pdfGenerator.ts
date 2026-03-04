@@ -74,7 +74,8 @@ export const generateRequisitionPDF = async (originalData: Requisition) => {
   // --- Cabeçalho ---
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("REQUISIÇÃO DE SERVIÇOS", 14, 15);
+  const title = data.type === 'Fábrica' ? "REQUISIÇÃO DE FÁBRICA" : "REQUISIÇÃO DE SERVIÇOS";
+  doc.text(title, 14, 15);
   doc.text(data.requisitionNumber, 90, 15);
 
   try {
@@ -105,6 +106,7 @@ export const generateRequisitionPDF = async (originalData: Requisition) => {
   doc.text("Cliente", 16, currentY + 5);
   drawRect(39, currentY, 80, 8);
   doc.text(data.clientName, 41, currentY + 5);
+  
   drawRect(119, currentY, 25, 8);
   doc.text("Ambiente", 121, currentY + 5);
   drawRect(144, currentY, pageWidth - 158, 8); 
@@ -116,6 +118,7 @@ export const generateRequisitionPDF = async (originalData: Requisition) => {
   doc.text("Montador", 16, currentY + 5);
   drawRect(39, currentY, 80, 8);
   doc.text(data.fitter, 41, currentY + 5);
+  
   drawRect(119, currentY, 30, 8);
   doc.text("Ordem Compra", 121, currentY + 5);
   drawRect(149, currentY, pageWidth - 163, 8);
@@ -132,25 +135,34 @@ export const generateRequisitionPDF = async (originalData: Requisition) => {
 
   // --- Tabelas ---
   doc.setFont("helvetica", "bold");
-  doc.text("SERVIÇO PARA EXECUÇÃO OU AJUSTES", pageWidth / 2, currentY, { align: "center" });
+  const tableTitle = data.type === 'Fábrica' ? "PEÇAS DE FÁBRICA (BATIDAS / FALTANTES / DANIFICADAS NA MONTAGEM)" : "SERVIÇO PARA EXECUÇÃO OU AJUSTES";
+  doc.text(tableTitle, pageWidth / 2, currentY, { align: "center" });
   
-  const serviceBody = data.services.map(s => [
-    s.quantity,
-    s.specification,
-    s.description,
-    s.volume
-  ]);
+  const serviceBody = data.services.map(s => {
+    if (data.type === 'Fábrica') {
+      return [s.quantity, s.specification, s.color || '', s.reason || '', s.description];
+    }
+    return [s.quantity, s.specification, s.description, s.volume];
+  });
 
-  if (serviceBody.length === 0) serviceBody.push(['', '', '', '']);
+  if (serviceBody.length === 0) {
+    serviceBody.push(data.type === 'Fábrica' ? ['', '', '', '', ''] : ['', '', '', '']);
+  }
 
   autoTable(doc, {
     startY: currentY + 2,
-    head: [['Quantidade', 'Especificação', 'Descrição', 'Volume']],
+    head: [data.type === 'Fábrica' ? ['Qtd', 'Medida', 'Cor', 'Motivo', 'Descrição'] : ['Quantidade', 'Especificação', 'Descrição', 'Volume']],
     body: serviceBody,
     theme: 'grid',
     headStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold', lineColor: 0, lineWidth: 0.1 },
     styles: { lineColor: 0, lineWidth: 0.1, textColor: 0 },
-    columnStyles: {
+    columnStyles: data.type === 'Fábrica' ? {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 'auto' }
+    } : {
       0: { cellWidth: 25 },
       1: { cellWidth: 40 },
       2: { cellWidth: 'auto' },
@@ -162,36 +174,40 @@ export const generateRequisitionPDF = async (originalData: Requisition) => {
   // @ts-ignore
   let finalY = doc.lastAutoTable.finalY + 10;
 
-  if (finalY > 250) {
-     doc.addPage();
-     finalY = 20;
+  if (data.type === 'Produção') {
+    if (finalY > 250) {
+       doc.addPage();
+       finalY = 20;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.text("ITENS PARA ENTREGA JUNTO COM SERVIÇOS EXECUTADOS", pageWidth / 2, finalY, { align: "center" });
+
+    const deliveryBody = data.deliveryItems.map(item => [
+      item.quantity,
+      item.description,
+      item.color,
+      item.supplier,
+      item.deliveryOk
+    ]);
+
+    if (deliveryBody.length === 0) deliveryBody.push(['', '', '', '', '']);
+
+    autoTable(doc, {
+      startY: finalY + 2,
+      head: [['Quantidade', 'Descrição', 'Cor', 'Fornecedor', 'Entrega OK']],
+      body: deliveryBody,
+      theme: 'grid',
+      headStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold', lineColor: 0, lineWidth: 0.1 },
+      styles: { lineColor: 0, lineWidth: 0.1, textColor: 0 },
+      margin: { left: 14, right: 14 }
+    });
+
+    // @ts-ignore
+    finalY = doc.lastAutoTable.finalY + 15;
+  } else {
+    finalY += 5;
   }
-
-  doc.setFont("helvetica", "bold");
-  doc.text("ITENS PARA ENTREGA JUNTO COM SERVIÇOS EXECUTADOS", pageWidth / 2, finalY, { align: "center" });
-
-  const deliveryBody = data.deliveryItems.map(item => [
-    item.quantity,
-    item.description,
-    item.color,
-    item.supplier,
-    item.deliveryOk
-  ]);
-
-  if (deliveryBody.length === 0) deliveryBody.push(['', '', '', '', '']);
-
-  autoTable(doc, {
-    startY: finalY + 2,
-    head: [['Quantidade', 'Descrição', 'Cor', 'Fornecedor', 'Entrega OK']],
-    body: deliveryBody,
-    theme: 'grid',
-    headStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold', lineColor: 0, lineWidth: 0.1 },
-    styles: { lineColor: 0, lineWidth: 0.1, textColor: 0 },
-    margin: { left: 14, right: 14 }
-  });
-
-  // @ts-ignore
-  finalY = doc.lastAutoTable.finalY + 15;
 
   if (data.photos && data.photos.length > 0) {
     if (finalY > 260) {
