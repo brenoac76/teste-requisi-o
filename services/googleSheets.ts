@@ -2,7 +2,7 @@
 import { Requisition, User } from '../types';
 
 // IMPORTANTE: Se você fez uma nova implantação no Apps Script, verifique se este URL mudou.
-const API_URL = "https://script.google.com/macros/s/AKfycbyyRhPcMbocagL_PWkPD6sO3sm2DLtFetkW2iNAUmMXHfFPsWUx3TjSjPAgNyyAVeqAaw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwNITKLC-gmCe4mSxgjQCRmH20pPkChwiSPqlOR-OFV2O4jqblxCLcEAwNoe4jt9q5Byw/exec";
 
 interface SheetResponse {
   status: string;
