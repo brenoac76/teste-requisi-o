@@ -80,6 +80,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
       setFormData(prev => ({
         ...prev,
         type: initialData.type,
+        requisitionNumber: suggestedNumber || prev.requisitionNumber,
         fitter: currentUser.role === 'montador' ? currentUser.name : prev.fitter,
         responsible: currentUser.role === 'montador' ? currentUser.name : prev.responsible
       }));
@@ -419,7 +420,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
             <span>Informações Gerais</span>
             
             {/* STATUS SELECTOR */}
-            <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border shadow-sm">
+            <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">
                <Activity className={`w-4 h-4 ${getStatusColor(formData.status)}`} />
                <select 
                   value={formData.status} 
@@ -445,7 +446,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 onChange={(e) => handleChange('requisitionNumber', e.target.value)}
                 disabled={isSensitiveFieldsLocked}
                 placeholder="Pendente de salvamento..."
-                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
             </div>
             <div>
@@ -455,7 +456,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 value={getInputDateString(formData.date)} 
                 onChange={(e) => handleChange('date', e.target.value)}
                 disabled={isSensitiveFieldsLocked}
-                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
             </div>
             <div className="md:col-span-2 lg:col-span-1">
@@ -465,7 +466,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 value={formData.clientName} 
                 onChange={(e) => handleChange('clientName', e.target.value)}
                 disabled={isStatusLocked}
-                className={`w-full p-2 border rounded outline-none ${isStatusLocked ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+                className={`w-full p-2 border rounded outline-none ${isStatusLocked ? 'bg-gray-100 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
             </div>
             <div>
@@ -475,7 +476,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 value={formData.environment} 
                 onChange={(e) => handleChange('environment', e.target.value)}
                 disabled={isStatusLocked}
-                className={`w-full p-2 border rounded outline-none ${isStatusLocked ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+                className={`w-full p-2 border rounded outline-none ${isStatusLocked ? 'bg-gray-100 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
             </div>
             <div>
@@ -485,7 +486,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 value={formData.purchaseOrder} 
                 onChange={(e) => handleChange('purchaseOrder', e.target.value)}
                 disabled={isStatusLocked}
-                className={`w-full p-2 border rounded outline-none ${isStatusLocked ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+                className={`w-full p-2 border rounded outline-none ${isStatusLocked ? 'bg-gray-100 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
             </div>
             <div>
@@ -495,7 +496,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 value={formData.fitter} 
                 onChange={(e) => handleChange('fitter', e.target.value)}
                 disabled={isSensitiveFieldsLocked}
-                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
             </div>
             <div>
@@ -505,7 +506,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 value={formData.responsible} 
                 onChange={(e) => handleChange('responsible', e.target.value)}
                 disabled={isSensitiveFieldsLocked}
-                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:border-brand-red'}`}
+                className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
             </div>
           </div>
@@ -516,8 +517,8 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
         <div className="col-span-1 lg:col-span-8 xl:col-span-9 space-y-6">
           
           {/* Services / Factory Items */}
-          <section className={`bg-white border rounded-lg overflow-hidden shadow-sm ${isCanceled ? 'opacity-75 grayscale' : ''}`}>
-            <div className="bg-gray-100 p-3 border-b">
+          <section className={`bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm ${isCanceled ? 'opacity-75 grayscale' : ''}`}>
+            <div className="bg-gray-50 p-3 border-b border-gray-200">
               <h2 className="font-bold text-gray-700 text-sm flex items-center gap-2">
                 {formData.type === 'Produção' ? 'SERVIÇOS' : 'PEÇAS DE FÁBRICA'} <span className="text-xs bg-gray-200 text-gray-600 px-2 rounded-full">{formData.services.length}</span>
               </h2>
@@ -529,12 +530,12 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 <div key={service.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50/50 flex justify-between items-start group">
                   <div className="flex-1 pr-2">
                     <div className="flex gap-2 text-xs font-bold text-gray-600 mb-1">
-                      <span className="bg-white border px-1.5 rounded">{service.quantity} qtd</span>
+                      <span className="bg-white border border-gray-200 px-1.5 rounded">{service.quantity} qtd</span>
                       {formData.type === 'Produção' ? (
-                        <span className="bg-white border px-1.5 rounded">{service.volume} vol</span>
+                        <span className="bg-white border border-gray-200 px-1.5 rounded">{service.volume} vol</span>
                       ) : (
                         <>
-                          {service.color && <span className="bg-white border px-1.5 rounded">Cor: {service.color}</span>}
+                          {service.color && <span className="bg-white border border-gray-200 px-1.5 rounded">Cor: {service.color}</span>}
                           {service.reason && (
                             <span className={`px-1.5 rounded border ${
                               service.reason === 'Peça Batida' ? 'bg-red-50 text-red-600 border-red-100' :
@@ -566,7 +567,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
 
             {/* Área de Inclusão (Fica sempre aberta) */}
             {!isStatusLocked && (
-              <div className="bg-gray-50 p-3 border-t">
+              <div className="bg-gray-50 p-3 border-t border-gray-200">
                 <div className="grid grid-cols-4 gap-2 mb-2">
                     <div>
                       <label className="text-[10px] text-gray-500 font-bold uppercase">Qtd</label>
@@ -574,7 +575,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                         type="number" 
                         value={newService.quantity} 
                         onChange={(e) => setNewService({...newService, quantity: parseInt(e.target.value)})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
+                        className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                       />
                     </div>
                     {formData.type === 'Produção' ? (
@@ -585,7 +586,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                             type="number" 
                             value={newService.volume ?? ''} 
                             onChange={(e) => setNewService({...newService, volume: e.target.value ? parseInt(e.target.value) : undefined})} 
-                            className="w-full p-2 border rounded text-sm bg-white" 
+                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                           />
                         </div>
                         <div className="col-span-2">
@@ -594,7 +595,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                             type="text" 
                             value={newService.specification} 
                             onChange={(e) => setNewService({...newService, specification: e.target.value})} 
-                            className="w-full p-2 border rounded text-sm bg-white" 
+                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                           />
                         </div>
                         <div className="col-span-4">
@@ -603,7 +604,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                             type="text"
                             value={newService.description} 
                             onChange={(e) => setNewService({...newService, description: e.target.value})} 
-                            className="w-full p-2 border rounded text-sm bg-white" 
+                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                             placeholder="Descreva o serviço..."
                           />
                         </div>
@@ -616,7 +617,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                             type="text" 
                             value={newService.color || ''} 
                             onChange={(e) => setNewService({...newService, color: e.target.value})} 
-                            className="w-full p-2 border rounded text-sm bg-white" 
+                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                           />
                         </div>
                         <div className="col-span-2">
@@ -625,7 +626,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                             type="text" 
                             value={newService.specification} 
                             onChange={(e) => setNewService({...newService, specification: e.target.value})} 
-                            className="w-full p-2 border rounded text-sm bg-white" 
+                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                             placeholder="Ex: 500x300"
                           />
                         </div>
@@ -634,7 +635,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                           <select 
                             value={newService.reason || ''} 
                             onChange={(e) => setNewService({...newService, reason: e.target.value as any})} 
-                            className="w-full p-2 border rounded text-sm bg-white"
+                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red"
                           >
                             <option value="">Selecione...</option>
                             <option value="Peça Batida">Peça Batida</option>
@@ -648,7 +649,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                             type="text"
                             value={newService.description} 
                             onChange={(e) => setNewService({...newService, description: e.target.value})} 
-                            className="w-full p-2 border rounded text-sm bg-white" 
+                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                             placeholder="Obs..."
                           />
                         </div>
@@ -667,8 +668,8 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
           </section>
 
           {/* Deliveries */}
-          <section className={`bg-white border rounded-lg overflow-hidden shadow-sm ${isCanceled ? 'opacity-75 grayscale' : ''}`}>
-            <div className="bg-gray-100 p-3 border-b">
+          <section className={`bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm ${isCanceled ? 'opacity-75 grayscale' : ''}`}>
+            <div className="bg-gray-50 p-3 border-b border-gray-200">
               <h2 className="font-bold text-gray-700 text-sm flex items-center gap-2">
                 ENTREGAS <span className="text-xs bg-gray-200 text-gray-600 px-2 rounded-full">{formData.deliveryItems.length}</span>
               </h2>
@@ -680,7 +681,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 <div key={item.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50/50 flex justify-between items-start group">
                   <div className="flex-1 pr-2">
                     <div className="flex gap-2 text-xs font-bold text-gray-600 mb-1">
-                      <span className="bg-white border px-1.5 rounded">{item.quantity} qtd</span>
+                      <span className="bg-white border border-gray-200 px-1.5 rounded">{item.quantity} qtd</span>
                       <span className={`border px-1.5 rounded ${item.deliveryOk === 'Sim' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                           OK: {item.deliveryOk}
                       </span>
@@ -705,7 +706,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
 
             {/* Área de Inclusão (Fica sempre aberta) */}
             {!isStatusLocked && (
-              <div className="bg-gray-50 p-3 border-t">
+              <div className="bg-gray-50 p-3 border-t border-gray-200">
                   <div className="grid grid-cols-4 gap-2 mb-2">
                     <div>
                       <label className="text-[10px] text-gray-500 font-bold uppercase">Qtd</label>
@@ -713,7 +714,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                         type="number" 
                         value={newDelivery.quantity} 
                         onChange={(e) => setNewDelivery({...newDelivery, quantity: parseInt(e.target.value)})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
+                        className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                       />
                     </div>
                     <div>
@@ -722,7 +723,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                         type="text" 
                         value={newDelivery.color} 
                         onChange={(e) => setNewDelivery({...newDelivery, color: e.target.value})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
+                        className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                       />
                     </div>
                     <div className="col-span-2">
@@ -731,7 +732,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                         type="text" 
                         value={newDelivery.supplier} 
                         onChange={(e) => setNewDelivery({...newDelivery, supplier: e.target.value})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
+                        className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                       />
                     </div>
                     <div className="col-span-3">
@@ -740,7 +741,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                         type="text" 
                         value={newDelivery.description} 
                         onChange={(e) => setNewDelivery({...newDelivery, description: e.target.value})} 
-                        className="w-full p-2 border rounded text-sm bg-white" 
+                        className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red" 
                         placeholder="Item..."
                       />
                     </div>
@@ -749,7 +750,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                       <select 
                         value={newDelivery.deliveryOk} 
                         onChange={(e) => setNewDelivery({...newDelivery, deliveryOk: e.target.value})} 
-                        className="w-full p-2 border rounded text-sm bg-white"
+                        className="w-full p-2 border border-gray-200 rounded text-sm bg-white outline-none focus:border-brand-red"
                       >
                         <option value="Sim">Sim</option>
                         <option value="Não">Não</option>
@@ -768,8 +769,8 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
           </section>
 
           {/* Photos */}
-          <section className={`bg-white border rounded-lg overflow-hidden shadow-sm ${isCanceled ? 'opacity-75 grayscale' : ''}`}>
-            <div className="bg-gray-100 p-3 flex justify-between items-center border-b">
+          <section className={`bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm ${isCanceled ? 'opacity-75 grayscale' : ''}`}>
+            <div className="bg-gray-50 p-3 flex justify-between items-center border-b border-gray-200">
               <h2 className="font-bold text-gray-700 text-sm">FOTOS</h2>
               <label className={`cursor-pointer flex items-center text-xs font-bold p-1 rounded ${isCompressing || isStatusLocked ? 'text-gray-400 cursor-not-allowed' : 'text-brand-red hover:bg-red-50'}`}>
                 <Camera className="w-4 h-4 mr-1" /> {isCompressing ? '...' : 'ADICIONAR'}

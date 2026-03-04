@@ -195,7 +195,8 @@ function App() {
     
     let maxNum = 0;
     requisitions.forEach(req => {
-      if (req.type === type && req.requisitionNumber && req.requisitionNumber.startsWith(prefix)) {
+      const reqType = req.type || 'Produção';
+      if (reqType === type && req.requisitionNumber && req.requisitionNumber.startsWith(prefix)) {
         const numStr = req.requisitionNumber.replace(prefix, '').replace(/\D/g, ''); 
         const num = parseInt(numStr, 10);
         if (!isNaN(num) && num > maxNum) maxNum = num;
@@ -275,6 +276,7 @@ function App() {
       
       {(view === 'create' || view === 'edit') && (
         <RequisitionForm 
+          key={selectedReq?.id || 'new-' + selectedReq?.type}
           initialData={selectedReq}
           suggestedNumber={view === 'create' && selectedReq ? calculateNextRequisitionNumber(selectedReq.type) : undefined}
           onSave={handleSave}

@@ -55,10 +55,38 @@ function doGet(e) {
   const action = e.parameter.action;
   if (action === 'getPartsRequests') return handleGetPartsRequests();
   if (action === 'getUsers') return handleGetUsers();
-  return handleGetRequisitions();
-}
+  
+  // Default action: getRequisitions
+  const sheet = getSheet(SHEET_REQUISITIONS);
+  const rows = sheet.getDataRange().getValues();
+  const requisitions = [];
 
-// --- USUÁRIOS ---
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0]) continue; // Pula linhas vazias
+    requisitions.push({
+      id: r[0],
+      requisitionNumber: r[1],
+      date: r[2],
+      clientName: r[3],
+      environment: r[4],
+      fitter: r[5],
+      purchaseOrder: r[6],
+      responsible: r[7],
+      services: parseJSONSafe(r[8]) || [],
+      deliveryItems: parseJSONSafe(r[9]) || [],
+      photos: parseJSONSafe(r[10]) || [],
+      status: r[11],
+      createdAt: r[12],
+      createdBy: r[13],
+      dateInProgress: r[14],
+      dateDone: r[15],
+      canceledBy: r[16],
+      type: r[17] || 'Produção'
+    });
+  }
+  return responseJSON(requisitions.reverse());
+}
 
 function handleLogin(data) {
   const sheet = getSheet(SHEET_USERS);
@@ -259,37 +287,6 @@ function handleSaveRequisition(data) {
     driveError: driveError,
     emailError: emailError
   });
-}
-
-function handleGetRequisitions() {
-  const sheet = getSheet(SHEET_REQUISITIONS);
-  const rows = sheet.getDataRange().getValues();
-  const requisitions = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    requisitions.push({
-      id: r[0],
-      requisitionNumber: r[1],
-      date: r[2],
-      clientName: r[3],
-      environment: r[4],
-      fitter: r[5],
-      purchaseOrder: r[6],
-      responsible: r[7],
-      services: parseJSONSafe(r[8]),
-      deliveryItems: parseJSONSafe(r[9]),
-      photos: parseJSONSafe(r[10]),
-      status: r[11],
-      createdAt: r[12],
-      createdBy: r[13],
-      dateInProgress: r[14],
-      dateDone: r[15],
-      canceledBy: r[16],
-      type: r[17] || 'Produção'
-    });
-  }
-  return responseJSON(requisitions);
 }
 
 function handleDeleteRequisition(data) {
