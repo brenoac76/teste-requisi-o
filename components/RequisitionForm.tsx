@@ -311,9 +311,21 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
   const isMontador = currentUser.role === 'montador';
   const isOperacional = currentUser.role === 'operacional';
   const isCanceled = formData.status === 'Cancelada';
-  const isStatusLocked = isCanceled || (initialData && isMontador && initialData.status !== 'Recebida' && initialData.status as any !== 'Recebido');
-  const isSensitiveFieldsLocked = isMontador || isOperacional || isStatusLocked;
-  const canEditStatus = (currentUser.role === 'gestor' || isOperacional) && !isCanceled;
+  
+  // Bloqueio total (incluindo botão salvar) para montadores se não for status "Recebida"
+  const isStatusLocked = isCanceled || (
+    initialData && 
+    isMontador && 
+    initialData.status !== 'Recebida' && 
+    initialData.status as any !== 'Recebido' &&
+    initialData.status !== undefined
+  );
+  
+  // Bloqueia campos de cabeçalho (Número, Data, Montador, Responsável) apenas se o status geral estiver bloqueado
+  const isSensitiveFieldsLocked = isStatusLocked;
+
+  // Permite que o montador também altere o status enquanto a edição estiver aberta
+  const canEditStatus = (currentUser.role === 'gestor' || isOperacional || isMontador) && !isCanceled;
 
   const getStatusColor = (s: RequisitionStatus) => {
     if (s === 'Concluída') return 'text-green-600';
@@ -444,7 +456,7 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
                 type="text" 
                 value={formData.requisitionNumber} 
                 onChange={(e) => handleChange('requisitionNumber', e.target.value)}
-                disabled={isSensitiveFieldsLocked}
+                disabled={isSensitiveFieldsLocked || !!initialData}
                 placeholder="Pendente de salvamento..."
                 className={`w-full p-2 border rounded outline-none ${isSensitiveFieldsLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-gray-200 focus:border-brand-red'}`}
               />
