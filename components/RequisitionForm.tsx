@@ -324,8 +324,8 @@ const RequisitionForm: React.FC<RequisitionFormProps> = ({ onSave, onCancel, onD
   // Bloqueia campos de cabeçalho (Número, Data, Montador, Responsável) apenas se o status geral estiver bloqueado
   const isSensitiveFieldsLocked = isStatusLocked;
 
-  // Permite que o montador também altere o status enquanto a edição estiver aberta
-  const canEditStatus = (currentUser.role === 'gestor' || isOperacional || isMontador) && !isCanceled;
+  // Apenas gestor e operacional podem alterar status
+  const canEditStatus = (currentUser.role === 'gestor' || isOperacional) && !isCanceled;
 
   const getStatusColor = (s: RequisitionStatus) => {
     if (s === 'Concluída') return 'text-green-600';

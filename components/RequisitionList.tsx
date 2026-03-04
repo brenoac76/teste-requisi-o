@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, FileText, User, Hash, ShoppingCart, RefreshCcw, UserX, ClipboardList, Hammer, CheckCircle2, Filter } from 'lucide-react';
-import { Requisition, RequisitionStatus, RequisitionType } from '../types';
+import { Search, Plus, FileText, User, Hash, ShoppingCart, RefreshCcw, UserX, ClipboardList, Hammer, CheckCircle2, Filter, FileDown } from 'lucide-react';
+import { Requisition, RequisitionStatus, RequisitionType, UserRole } from '../types';
 import { format } from 'date-fns';
 import { todeschiniLogo } from '../utils/assets';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface RequisitionListProps {
   requisitions: Requisition[];
@@ -10,6 +12,7 @@ interface RequisitionListProps {
   onSelect: (req: Requisition) => void;
   onManageUsers: () => void;
   isManager: boolean;
+  userRole: UserRole;
   onLogout: () => void;
   username: string;
   onRefresh: () => void;
@@ -17,7 +20,7 @@ interface RequisitionListProps {
 
 type FilterType = 'Todas' | RequisitionStatus;
 
-const RequisitionList: React.FC<RequisitionListProps> = ({ requisitions, onCreateNew, onSelect, onManageUsers, isManager, onLogout, username, onRefresh }) => {
+const RequisitionList: React.FC<RequisitionListProps> = ({ requisitions, onCreateNew, onSelect, onManageUsers, isManager, userRole, onLogout, username, onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterType>('Todas');
   const [activeType, setActiveType] = useState<RequisitionType>('Produção');
@@ -222,6 +225,67 @@ const RequisitionList: React.FC<RequisitionListProps> = ({ requisitions, onCreat
     );
   };
 
+  const generatePDFReport = (reportType: 'abertas' | 'concluidas') => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    
+    const title = reportType === 'abertas' 
+      ? 'Relatório de Requisições Fábrica - Recebidas e Em Progresso' 
+      : 'Relatório de Requisições Fábrica - Concluídas';
+
+    // Filtrar requisições para o relatório
+    const reportData = safeRequisitions.filter(r => {
+      if ((r.type || 'Produção') !== 'Fábrica') return false;
+      const status = getNormalizedStatus(r.status);
+      if (reportType === 'abertas') {
+        return status === 'Recebida' || status === 'Em Progresso';
+      } else {
+        return status === 'Concluída';
+      }
+    });
+
+    // Ordenar por número de requisição
+    reportData.sort((a, b) => (a.requisitionNumber || '').localeCompare(b.requisitionNumber || ''));
+
+    // Cabeçalho do PDF
+    doc.setFontSize(14);
+    doc.text(title, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 22);
+
+    // Preparar dados da tabela
+    const tableRows = reportData.map(req => [
+      req.requisitionNumber || '-',
+      formatDateSafe(req.date),
+      req.clientName || '-',
+      req.purchaseOrder || '-',
+      req.responsible || '-',
+      req.fitter || '-',
+      getNormalizedStatus(req.status),
+      (req.services?.length || 0) + (req.deliveryItems?.length || 0)
+    ]);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['Nº', 'Data', 'Cliente', 'OC', 'Resp.', 'Montador', 'Status', 'Itens']],
+      body: tableRows,
+      theme: 'grid',
+      styles: { fontSize: 7, cellPadding: 1 },
+      headStyles: { fillColor: [180, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 15 },
+        1: { cellWidth: 15 },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 20 },
+        7: { cellWidth: 10, halign: 'center' },
+      }
+    });
+
+    doc.save(`relatorio_fabrica_${reportType}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+  };
+
   const filters: { id: FilterType; label: string; color: string }[] = [
     { id: 'Todas', label: 'Geral', color: 'bg-gray-800' },
     { id: 'Recebida', label: 'Recebidas', color: 'bg-gray-600' },
@@ -312,31 +376,57 @@ const RequisitionList: React.FC<RequisitionListProps> = ({ requisitions, onCreat
         </div>
 
         {/* Filter Tabs (Scrollable) */}
-        <div className="px-3 sm:px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar border-b border-gray-100">
-          {filters.map((f) => {
-            const isActive = statusFilter === f.id;
-            const count = counts[f.id] || 0;
-            return (
+        <div className="px-3 sm:px-4 pb-3 flex items-center justify-between border-b border-gray-100">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+            {filters.map((f) => {
+              const isActive = statusFilter === f.id;
+              const count = counts[f.id] || 0;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setStatusFilter(f.id)}
+                  className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border
+                    ${isActive 
+                      ? `${f.color} text-white border-transparent shadow-md transform scale-105` 
+                      : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}
+                  `}
+                >
+                  <span>{f.label}</span>
+                  <span className={`
+                    px-1.5 py-0.5 rounded-full text-[10px] 
+                    ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'}
+                  `}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Botões de Relatório PDF - Apenas para Fábrica e apenas para Gestor/Operacional */}
+          {activeType === 'Fábrica' && (userRole === 'gestor' || userRole === 'operacional') && (
+            <div className="flex gap-2 ml-4 flex-shrink-0">
               <button
-                key={f.id}
-                onClick={() => setStatusFilter(f.id)}
-                className={`
-                  flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border
-                  ${isActive 
-                    ? `${f.color} text-white border-transparent shadow-md transform scale-105` 
-                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}
-                `}
+                onClick={() => generatePDFReport('abertas')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-[10px] font-bold hover:bg-gray-700 transition shadow-sm"
+                title="Relatório Abertas (Recebidas/Progresso)"
               >
-                <span>{f.label}</span>
-                <span className={`
-                  px-1.5 py-0.5 rounded-full text-[10px] 
-                  ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'}
-                `}>
-                  {count}
-                </span>
+                <FileDown className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Relatório Abertas</span>
+                <span className="sm:hidden">Abertas</span>
               </button>
-            );
-          })}
+              <button
+                onClick={() => generatePDFReport('concluidas')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 text-white rounded-lg text-[10px] font-bold hover:bg-green-600 transition shadow-sm"
+                title="Relatório Concluídas"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Relatório Concluídas</span>
+                <span className="sm:hidden">Concluídas</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

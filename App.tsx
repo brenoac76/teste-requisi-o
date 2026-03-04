@@ -266,6 +266,7 @@ function App() {
               }}
               onManageUsers={() => setView('users')}
               isManager={currentUser.role === 'gestor'} // Apenas gestor pode gerenciar usuários de fato
+              userRole={currentUser.role}
               onLogout={handleLogout}
               username={currentUser.name}
               onRefresh={() => loadData(false)}
