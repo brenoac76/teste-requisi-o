@@ -252,34 +252,79 @@ const RequisitionList: React.FC<RequisitionListProps> = ({ requisitions, onCreat
     doc.setFontSize(10);
     doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 22);
 
-    // Preparar dados da tabela
-    const tableRows = reportData.map(req => [
-      req.requisitionNumber || '-',
-      formatDateSafe(req.date),
-      req.clientName || '-',
-      req.purchaseOrder || '-',
-      req.responsible || '-',
-      req.fitter || '-',
-      getNormalizedStatus(req.status),
-      (req.services?.length || 0) + (req.deliveryItems?.length || 0)
-    ]);
+    // Preparar dados da tabela expandidos por item
+    const tableRows: any[] = [];
+    reportData.forEach(req => {
+      const services = req.services || [];
+      const deliveries = req.deliveryItems || [];
+      
+      if (services.length === 0 && deliveries.length === 0) {
+        tableRows.push([
+          req.requisitionNumber || '-',
+          formatDateSafe(req.date),
+          req.clientName || '-',
+          req.purchaseOrder || '-',
+          req.responsible || '-',
+          req.fitter || '-',
+          getNormalizedStatus(req.status),
+          '-', '-', '-', '-', '-'
+        ]);
+      } else {
+        services.forEach(item => {
+          tableRows.push([
+            req.requisitionNumber || '-',
+            formatDateSafe(req.date),
+            req.clientName || '-',
+            req.purchaseOrder || '-',
+            req.responsible || '-',
+            req.fitter || '-',
+            getNormalizedStatus(req.status),
+            item.quantity || 0,
+            item.color || '-',
+            'Serviço',
+            item.specification || '-',
+            item.reason || '-'
+          ]);
+        });
+        deliveries.forEach(item => {
+          tableRows.push([
+            req.requisitionNumber || '-',
+            formatDateSafe(req.date),
+            req.clientName || '-',
+            req.purchaseOrder || '-',
+            req.responsible || '-',
+            req.fitter || '-',
+            getNormalizedStatus(req.status),
+            item.quantity || 0,
+            item.color || '-',
+            'Entrega',
+            '-',
+            '-'
+          ]);
+        });
+      }
+    });
 
     autoTable(doc, {
       startY: 28,
-      head: [['Nº', 'Data', 'Cliente', 'OC', 'Resp.', 'Montador', 'Status', 'Itens']],
+      head: [['Nº', 'Data', 'Cliente', 'OC', 'Resp.', 'Montador', 'Status', 'Qtd', 'Cor', 'Tipo', 'Medida', 'Motivo']],
       body: tableRows,
       theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 1 },
+      styles: { fontSize: 6, cellPadding: 1 },
       headStyles: { fillColor: [180, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 15 },
+        0: { cellWidth: 12 },
+        1: { cellWidth: 12 },
         2: { cellWidth: 'auto' },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 25 },
-        6: { cellWidth: 20 },
+        3: { cellWidth: 15 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 18 },
         7: { cellWidth: 10, halign: 'center' },
+        8: { cellWidth: 15 },
+        9: { cellWidth: 15 },
+        10: { cellWidth: 25 },
+        11: { cellWidth: 35 },
       }
     });
 
